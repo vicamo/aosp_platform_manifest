@@ -55,7 +55,7 @@ git remote rm aosp
 endef
 
 .PHONY: all
-all: $(shell git branch -r | grep vicamo/android- | cut -d/ -f2)
+all: $(shell git branch | grep android-)
 	@echo END
 
 master:
