@@ -30,12 +30,41 @@ $(2): $(1)
 
 endef
 
+define sync-aosp
+@set -e; \
+if [ -z "$$(git config remote.aosp.url)" ]; then \
+  git remote add aosp https://android.googlesource.com/platform/manifest; \
+fi; \
+(git tag -l | xargs git tag -d) >/dev/null 2>&1; \
+[ -z "$$(git branch | grep android-)" ] || (git branch | grep android- | xargs git branch --quiet -D); \
+git fetch --prune --quiet aosp; \
+echo "# From tags:"; \
+for tag in $$(git tag -l | grep -e android-[0-9]); do \
+  rev=$$(git cat-file --textconv $$tag:default.xml | grep 'default revision' | cut -d\" -f2 | cut -d/ -f3); \
+  [ -z "$$(git log -1 --pretty=format:%H vicamo/$$rev 2>/dev/null)" ] || continue; \
+  git branch --quiet $$rev $$tag; \
+  echo "\$$(eval \$$(call define-tag,$$rev,$$rev))"; \
+done; \
+echo "# From branches:"; \
+for branch in $$(git branch -r | grep -e aosp/android-[0-9] | cut -d/ -f2); do \
+  rev=$$(git cat-file --textconv aosp/$$branch:default.xml | grep 'default revision' | cut -d\" -f2 | cut -d/ -f3); \
+  [ -z "$$(git log -1 --pretty=format:%H vicamo/$$rev 2>/dev/null)" ] || continue; \
+  echo "\$$(eval \$$(call define-tag,$$rev,$$rev))"; \
+done; \
+(git tag -l | xargs git tag -d) >/dev/null 2>&1; \
+git remote rm aosp
+endef
+
 .PHONY: all
 all: $(shell git branch -r | grep vicamo/android- | cut -d/ -f2)
 	@echo END
 
 master:
 	@echo BEGIN
+
+.PHONY: sync
+sync:
+	$(sync-aosp)
 
 $(eval $(call define-tag,master,android-1.6_r1))
 $(eval $(call define-tag,android-1.6_r1,android-1.6_r1.1))
