@@ -1,7 +1,6 @@
 #!/bin/env make -f
 
-# for b in $(git branch -r | grep vicamo/android-); do git checkout -t $b; done
-# git checkout vicamo/master
+# for b in master $(git branch -r | grep vicamo/android- | cut -d/ -f2); do git branch --quiet $b vicamo/$b; done
 # make -f ../Makefile -j1 RUN=1
 
 # $(1): parent
